@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق الإيصالات - ترحيلات أبناء الشمال</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --paper-bg: #eef6ff; 
+            --ink-blue: #0044cc; 
+            --line-blue: #5a8bd6; 
+            --handwriting-color: #000080; 
+            --red-color: #d81b60; 
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* =========================================
+           تصميم واجهة تسجيل الدخول (Liquid Glass)
+           ========================================= */
+        #login-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* خلفية متدرجة زاهية لتظهر تأثير الزجاج */
+            background: linear-gradient(45deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%); 
+            background-image: linear-gradient(120deg, #89f7fe 0%, #66a6ff 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 40px 20px;
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .glass-title {
+            color: white;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .pin-display {
+            width: 100%;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: #333;
+            letter-spacing: 5px;
+            font-family: sans-serif;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            width: 100%;
+        }
+
+        .num-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 22px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .num-btn:active {
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0.95);
+        }
+
+        .num-btn.clear {
+            background: rgba(255, 100, 100, 0.4);
+        }
+
+        .num-btn.enter {
+            background: rgba(100, 255, 150, 0.4);
+        }
+
+        /* رسالة الخطأ */
+        .error-msg {
+            color: #ff3e3e;
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 24px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* =========================================
+           نهاية تصميم الدخول
+           ========================================= */
+
+
+        /* ------------------- تصميم الواجهة الرئيسية (Main View) ------------------- */
+        #main-view {
+            width: 100%;
+            max-width: 450px;
+            padding: 20px 10px;
+            display: none; /* مخفي افتراضياً حتى يتم تسجيل الدخول */
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* تصميم الإيصال */
+        .receipt-container {
+            width: 100%;
+            background-color: var(--paper-bg);
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* الهيدر */
+        .header {
+            text-align: center;
+            color: var(--ink-blue);
+            border-bottom: 2px solid var(--ink-blue);
+            padding-bottom: 5px;
+            margin-bottom: 5px;
+        }
+
+        .header h1 {
+            font-size: 22px; 
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .locations {
+            font-size: 11px;
+            font-weight: 600;
+            margin: 4px 0;
+        }
+
+        .phones {
+            font-size: 13px;
+            font-weight: 700;
+            border-top: 1px solid var(--ink-blue);
+            border-bottom: 1px solid var(--ink-blue);
+            padding: 2px 0;
+            margin: 5px 0;
+            direction: ltr; 
+            text-align: center;
+        }
+
+        /* صف العنوان والتاريخ والرقم */
+        .receipt-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end; 
+            margin: 10px 0;
+        }
+
+        /* رقم الإيصال الأحمر */
+        .serial-number {
+            color: var(--red-color) !important;
+            font-family: 'Cairo', sans-serif !important; 
+            font-weight: bold;
+            font-size: 22px !important;
+            width: 50px;
+            border: none;
+            background: transparent;
+            text-align: center;
+            padding: 0;
+        }
+        
+        /* مربع إيصال استلام */
+        .receipt-title {
+            border: 2px solid var(--ink-blue);
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--ink-blue);
+            background: var(--paper-bg);
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        /* قسم التاريخ - تم التعديل هنا لزيادة الوضوح */
+        .date-section {
+            font-size: 14px; /* تكبير خط التسمية */
+            font-weight: bold; 
+            color: var(--ink-blue);
+            display: flex;
+            align-items: center;
+            gap: 4px; /* مسافة أوسع قليلاً */
+            white-space: nowrap; 
+        }
+
+        .date-input {
+            width: 45px; /* عرض أكبر للأرقام */
+            height: 30px; /* ارتفاع أكبر */
+            border: none;
+            border-bottom: 1px dotted var(--line-blue); 
+            background: transparent;
+            font-family: 'Aref Ruqaa', serif;
+            font-size: 20px; /* خط أكبر */
+            color: var(--handwriting-color);
+            text-align: center;
+            padding: 0;
+            line-height: 30px;
+        }
+
+        /* تكبير خانة السنة بشكل خاص */
+        #yearInput {
+            width: 60px;
+        }
+
+        /* اسم المستلم منه */
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--ink-blue);
+            font-weight: 700;
+        }
+
+        .text-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px dotted var(--line-blue);
+            font-family: 'Aref Ruqaa', serif;
+            font-size: 18px;
+            color: var(--handwriting-color);
+            text-align: center;
+            padding: 0 5px;
+        }
+
+        .full-width-input {
+            flex-grow: 1;
+            margin-right: 5px;
+        }
+
+        /* الجدول */
+        .receipt-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            border: 2px solid var(--ink-blue);
+        }
+
+        .receipt-table th {
+            font-weight: 700;
+            font-size: 13px;
+            padding: 5px;
+        }
+
+        .receipt-table th, .receipt-table td {
+            border: 1px solid var(--ink-blue);
+            text-align: center;
+            padding: 0;
+            color: var(--ink-blue);
+        }
+
+        .receipt-table td {
+            height: 35px; 
+        }
+
+        .receipt-table input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            font-family: 'Aref Ruqaa', serif;
+            font-size: 18px;
+            color: var(--handwriting-color);
+            text-align: center;
+            background: transparent;
+        }
+
+        /* التوقيع والإجمالي */
+        .footer-section {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        
+        .signature-area {
+            text-align: center;
+            width: 140px;
+        }
+
+        canvas#sig-canvas {
+            border: 1px dashed var(--line-blue);
+            background: rgba(255, 255, 255, 0.3);
+            cursor: crosshair;
+            touch-action: none;
+            width: 140px;
+            height: 70px;
+        }
+
+        .disclaimer {
+            font-size: 10px; 
+            font-weight: bold;
+            color: var(--ink-blue);
+            text-align: center;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        /* الأزرار تحت الإيصال */
+        .controls {
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            padding: 0 10px;
+        }
+
+        .btn {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Cairo', sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+        }
+
+        .btn-save { background-color: #2e7d32; color: white; }
+        .btn-clear { background-color: #c62828; color: white; }
+        .btn-archive { background-color: #1976d2; color: white; }
+
+        /* شاشة الأرشيف */
+        #archive-view {
+            display: none;
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+
+        .receipt-card {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #fafafa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="login-view">
+        <div class="glass-card">
+            <div class="glass-title">تسجيل الدخول</div>
+            
+            <div class="pin-display" id="pinDisplay"></div>
+            
+            <div class="error-msg" id="errorMsg"></div>
+
+            <div class="numpad">
+                <button class="num-btn" onclick="addNumber(1)">1</button>
+                <button class="num-btn" onclick="addNumber(2)">2</button>
+                <button class="num-btn" onclick="addNumber(3)">3</button>
+                <button class="num-btn" onclick="addNumber(4)">4</button>
+                <button class="num-btn" onclick="addNumber(5)">5</button>
+                <button class="num-btn" onclick="addNumber(6)">6</button>
+                <button class="num-btn" onclick="addNumber(7)">7</button>
+                <button class="num-btn" onclick="addNumber(8)">8</button>
+                <button class="num-btn" onclick="addNumber(9)">9</button>
+                <button class="num-btn clear" onclick="clearPin()">C</button>
+                <button class="num-btn" onclick="addNumber(0)">0</button>
+                <button class="num-btn enter" onclick="checkPin()">⏎</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-view">
+        <div class="receipt-container" id="receipt-capture">
+            
+            <div class="header">
+                <h1>ترحيلات أبناء الشمال (البعيو)</h1>
+                <div class="locations">عطبرة - كسلا - حلفا - القضارف - بورتسودان</div>
+                <div class="phones">0128301605 - 0902145567</div>
+            </div>
+
+            <div class="receipt-header-row">
+                <input type="number" class="serial-number" id="receiptNo" placeholder="000">
+                
+                <div class="receipt-title">إيصال<br>استلام بضاعة</div>
+                
+                <div class="date-section">
+                    <span>التاريخ:</span>
+                    <input type="number" id="dayInput" class="date-input" placeholder="يوم">
+                    <span>/</span>
+                    <input type="number" id="monthInput" class="date-input" placeholder="شهر">
+                    <span>/</span>
+                    <input type="number" id="yearInput" class="date-input" value="2025">
+                    <span>م</span>
+                </div>
+            </div>
+
+            <div class="input-row" style="margin-top: 10px; padding: 0 5px;">
+                <span>المطلوب من السيد:</span>
+                <input type="text" class="text-input full-width-input" id="customerName" placeholder="">
+            </div>
+
+            <table class="receipt-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">العدد</th>
+                        <th style="width: 60%;">البيان</th>
+                        <th style="width: 25%;">السعر</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                    <tr><td><input type="text"></td><td><input type="text"></td><td><input type="text"></td></tr>
+                </tbody>
+            </table>
+
+            <div class="footer-section">
+                <div style="font-family: 'Cairo', sans-serif; font-size: 14px; color: var(--ink-blue); font-weight: bold; margin-right: 10px;">
+                    الإجمالي...
+                    <input type="text" class="text-input" placeholder="" style="width: 100px; text-align: right; margin-right: 5px;">
+                </div>
+
+                <div class="signature-area">
+                    <canvas id="sig-canvas" width="140" height="70"></canvas>
+                    <div style="font-size: 12px; font-weight: bold; color: var(--ink-blue);">التوقيع</div>
+                </div>
+            </div>
+
+            <div class="disclaimer">الزجاج والسوائل على مسؤولية صاحبها</div>
+            <div class="disclaimer" style="text-align: left; margin-top: 5px;">التوقيع: ....................</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-save" onclick="saveReceipt()">حفظ الإيصال (صورة)</button>
+            <button class="btn btn-clear" onclick="clearCanvas()">مسح التوقيع</button>
+            <button class="btn btn-archive" onclick="showArchive()">إيصالاتي</button>
+        </div>
+    </div>
+
+    <div id="archive-view" style="display: none;">
+        <h2 style="text-align: center; color: var(--ink-blue);">الأرشيف</h2>
+        
+        <div style="margin-bottom:15px;">
+            <input type="text" id="searchInput" onkeyup="filterReceipts()" placeholder="بحث بالاسم أو الرقم..." style="width:100%; padding:10px; border-radius:5px; border:1px solid #ccc; font-family:'Cairo';">
+        </div>
+
+        <div id="receipts-list"></div>
+        <button class="btn" style="background: #555; color: white; margin-top: 20px; width: 100%;" onclick="showMain()">عودة للإيصال الجديد</button>
+    </div>
+
+    <script>
+        // ------------------- منطق تسجيل الدخول -------------------
+        const CORRECT_PIN = "72838362732";
+        let currentPin = "";
+
+        function addNumber(num) {
+            if (currentPin.length < 20) {
+                currentPin += num;
+                updatePinDisplay();
+                document.getElementById('errorMsg').innerText = "";
+            }
+        }
+
+        function clearPin() {
+            currentPin = "";
+            updatePinDisplay();
+            document.getElementById('errorMsg').innerText = "";
+        }
+
+        function updatePinDisplay() {
+            // عرض نجوم بدل الأرقام للخصوصية
+            const display = document.getElementById('pinDisplay');
+            display.innerText = "*".repeat(currentPin.length);
+        }
+
+        function checkPin() {
+            if (currentPin === CORRECT_PIN) {
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('main-view').style.display = 'flex';
+                // إعادة ضبط حجم الكانفاس بعد العرض
+                resizeCanvas(); 
+            } else {
+                document.getElementById('errorMsg').innerText = "كلمة المرور غير صحيحة";
+                currentPin = "";
+                updatePinDisplay();
+            }
+        }
+
+        // ------------------- منطق التطبيق الأصلي -------------------
+        const mainView = document.getElementById('main-view');
+
+        const canvas = document.getElementById('sig-canvas');
+        const ctx = canvas.getContext('2d');
+        let drawing = false;
+
+        function resizeCanvas() {
+             const canvasWidth = 140;
+             const canvasHeight = 70;
+             canvas.width = canvasWidth;
+             canvas.height = canvasHeight;
+             ctx.strokeStyle = "#000080"; 
+             ctx.lineWidth = 2;
+        }
+
+        ['mousedown', 'touchstart'].forEach(evt => canvas.addEventListener(evt, startDraw));
+        ['mouseup', 'touchend'].forEach(evt => canvas.addEventListener(evt, stopDraw));
+        ['mousemove', 'touchmove'].forEach(evt => canvas.addEventListener(evt, draw));
+
+        function startDraw(e) {
+            e.preventDefault();
+            drawing = true;
+            ctx.beginPath();
+            const pos = getPos(e);
+            ctx.moveTo(pos.x, pos.y);
+        }
+
+        function stopDraw() {
+            drawing = false;
+            ctx.beginPath();
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveReceipt() {
+            const element = document.getElementById("receipt-capture");
+            const customerName = document.getElementById("customerName").value || "بدون_اسم";
+            const receiptNo = document.getElementById("receiptNo").value || "00";
+            
+            const d = document.getElementById("dayInput").value || "00";
+            const m = document.getElementById("monthInput").value || "00";
+            const y = document.getElementById("yearInput").value || "2025";
+            const fullDate = `${y}-${m}-${d}`;
+
+            canvas.style.border = "none";
+            canvas.style.background = "transparent";
+
+            // إضافة خيارات إضافية لتحسين التقاط الصورة
+            html2canvas(element, { 
+                scale: 3, 
+                backgroundColor: null,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    // حيلة لضمان ظهور مدخلات التاريخ بشكل صحيح في الصورة
+                    const inputs = clonedDoc.querySelectorAll('.date-input');
+                    inputs.forEach(input => {
+                        input.style.width = '50px'; // توسيع إجباري عند التصوير
+                    });
+                }
+            }).then(canvasImg => {
+                const image = canvasImg.toDataURL("image/png");
+                
+                const link = document.createElement('a');
+                link.download = `ايصال-${receiptNo}-${customerName}.png`;
+                link.href = image;
+                link.click();
+
+                saveToArchive(receiptNo, customerName, fullDate, image);
+
+                canvas.style.border = "1px dashed var(--line-blue)";
+                canvas.style.background = "rgba(255, 255, 255, 0.3)";
+                
+                alert("تم حفظ الإيصال كصورة بنجاح!");
+            });
+        }
+
+        function saveToArchive(no, name, date, imageData) {
+            let receipts = JSON.parse(localStorage.getItem('myReceipts')) || [];
+            receipts.unshift({ id: Date.now(), no, name, date, image: imageData });
+            localStorage.setItem('myReceipts', JSON.stringify(receipts));
+        }
+
+        function showArchive() {
+            mainView.style.display = 'none';
+            document.getElementById('archive-view').style.display = 'block';
+            renderReceipts();
+        }
+
+        function showMain() {
+            document.getElementById('archive-view').style.display = 'none';
+            mainView.style.display = 'flex';
+        }
+
+        function renderReceipts(filterText = '') {
+            const list = document.getElementById('receipts-list');
+            list.innerHTML = '';
+            let receipts = JSON.parse(localStorage.getItem('myReceipts')) || [];
+            
+            if (filterText) {
+                receipts = receipts.filter(r => r.name.includes(filterText) || r.no.includes(filterText) || r.date.includes(filterText));
+            }
+
+            if (receipts.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#999;">لا توجد إيصالات محفوظة.</p>';
+                return;
+            }
+
+            receipts.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'receipt-card';
+                card.innerHTML = `
+                    <div style="text-align:right;">
+                        <h4 style="margin:0; font-size:14px;">${r.name} (#${r.no})</h4>
+                        <p style="margin:5px 0 0; color:#666; font-size:12px;">التاريخ: ${r.date}</p>
+                    </div>
+                    <div>
+                        <a href="${r.image}" download="ايصال-${r.no}.png" class="btn-view">صورة</a>
+                        <button onclick="deleteReceipt(${r.id})" style="border:none; background:none; color:red; font-weight:bold; cursor:pointer;">X</button>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function filterReceipts() {
+            renderReceipts(document.getElementById('searchInput').value);
+        }
+
+        function deleteReceipt(id) {
+            if(confirm('حذف هذا الإيصال؟')) {
+                let receipts = JSON.parse(localStorage.getItem('myReceipts')) || [];
+                receipts = receipts.filter(r => r.id !== id);
+                localStorage.setItem('myReceipts', JSON.stringify(receipts));
+                renderReceipts(document.getElementById('searchInput').value);
+            }
+        }
+    </script>
+</body>
+</html>
